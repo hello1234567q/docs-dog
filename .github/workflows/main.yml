@@ -1,0 +1,29 @@
+name: Android NDK Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r27c
+
+    - name: Build libexecutor.so
+      run: |
+        ${{ env.ANDROID_NDK }}/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang \
+          -fPIC -shared executor.cpp -o libexecutor.so
+
+    - name: Upload libexecutor.so
+      uses: actions/upload-artifact@v3
+      with:
+        name: libexecutor
+        path: libexecutor.so
