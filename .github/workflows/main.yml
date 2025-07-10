@@ -23,7 +23,7 @@ jobs:
           -fPIC -shared executor.cpp -o libexecutor.so
 
     - name: Upload libexecutor.so
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: libexecutor
         path: libexecutor.so
