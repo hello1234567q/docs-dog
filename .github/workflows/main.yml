@@ -1,8 +1,7 @@
-name: Build U-Boot QEMU ARM64 (Splash mặc định)
+name: Build U-Boot with Splash
 
 on:
   push:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -16,36 +15,34 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install -y \
-          gcc-aarch64-linux-gnu make bison flex libssl-dev
+        sudo apt install -y build-essential gcc-aarch64-linux-gnu bison flex \
+          libssl-dev device-tree-compiler python3-pyelftools wget
 
-    - name: Clone U-Boot from GitHub mirror
+    - name: Clone U-Boot
       run: |
-        git clone --depth=1 https://github.com/u-boot/u-boot.git
+        git clone https://github.com/u-boot/u-boot.git --depth=1
         cd u-boot
 
-        # Dùng config cho QEMU ARM64
-        make qemu_arm64_defconfig
+        # Tạo logo mặc định (dùng logo Denx có sẵn)
+        make CROSS_COMPILE=aarch64-linux-gnu- qemu_arm64_defconfig
 
-        # Bật splash screen mặc định (không dùng ảnh ngoài)
-        echo "CONFIG_VIDEO=y" >> .config
-        echo "CONFIG_DM_VIDEO=y" >> .config
-        echo "CONFIG_VIDEO_LOGO=y" >> .config
-        echo "CONFIG_SYS_WHITE_ON_BLACK=y" >> .config
+        # Bật splash và vô hiệu hóa mkeficapsule (tránh lỗi gnutls)
         echo "CONFIG_SPLASH_SCREEN=y" >> .config
-
+        echo "CONFIG_VIDEO=y" >> .config
+        echo "CONFIG_VIDEO_LOGO=y" >> .config
+        echo "CONFIG_TOOLS_MKEFICAPSULE=n" >> .config
         make olddefconfig
 
-        # Build chính U-Boot, không build tool EFI để tránh lỗi
+    - name: Build U-Boot
+      run: |
+        cd u-boot
         make -j$(nproc) CROSS_COMPILE=aarch64-linux-gnu-
 
-    - name: Save build output
-      run: |
-        mkdir -p output
-        cp u-boot/u-boot.bin output/
-
-    - name: Upload bootloader artifact
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: u-boot-splash-default
-        path: output/
+        name: u-boot-output
+        path: |
+          u-boot/u-boot.bin
+          u-boot/u-boot.img
+          u-boot/System.map
