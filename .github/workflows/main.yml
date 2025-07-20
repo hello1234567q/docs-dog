@@ -11,20 +11,23 @@ jobs:
 
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install -y gcc-aarch64-linux-gnu make bison flex libssl-dev
+        sudo apt install -y \
+          gcc-aarch64-linux-gnu make bison flex libssl-dev
 
     - name: Clone U-Boot from GitHub mirror
       run: |
-        git clone https://github.com/u-boot/u-boot.git
+        git clone --depth=1 https://github.com/u-boot/u-boot.git
         cd u-boot
+
+        # Dùng config cho QEMU ARM64
         make qemu_arm64_defconfig
 
-        # Kích hoạt splash mặc định (không cần ảnh ngoài)
+        # Bật splash screen mặc định (không dùng ảnh ngoài)
         echo "CONFIG_VIDEO=y" >> .config
         echo "CONFIG_DM_VIDEO=y" >> .config
         echo "CONFIG_VIDEO_LOGO=y" >> .config
@@ -32,6 +35,8 @@ jobs:
         echo "CONFIG_SPLASH_SCREEN=y" >> .config
 
         make olddefconfig
+
+        # Build chính U-Boot, không build tool EFI để tránh lỗi
         make -j$(nproc) CROSS_COMPILE=aarch64-linux-gnu-
 
     - name: Save build output
