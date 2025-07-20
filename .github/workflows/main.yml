@@ -23,25 +23,25 @@ jobs:
         git clone https://github.com/u-boot/u-boot.git --depth=1
         cd u-boot
 
-        # Default defconfig for QEMU ARM64
+        # Dùng cấu hình QEMU ARM64
         make CROSS_COMPILE=aarch64-linux-gnu- qemu_arm64_defconfig
 
-        # Enable splash
+        # Bật splash
         echo "CONFIG_SPLASH_SCREEN=y" >> .config
         echo "CONFIG_VIDEO=y" >> .config
         echo "CONFIG_VIDEO_LOGO=y" >> .config
 
-        # Enable fastboot over USB
+        # Bật fastboot USB
         echo "CONFIG_CMD_FASTBOOT=y" >> .config
         echo "CONFIG_USB_FUNCTION_FASTBOOT=y" >> .config
         echo "CONFIG_USB_GADGET=y" >> .config
         echo "CONFIG_USB_GADGET_MANUFACTURER=\"FakePhone Inc\"" >> .config
         echo "CONFIG_FASTBOOT_FLASH=y" >> .config
 
-        # Disable mkeficapsule to avoid gnutls.h build error
+        # Tắt mkeficapsule để tránh lỗi gnutls
         echo "CONFIG_TOOLS_MKEFICAPSULE=n" >> .config
 
-        # Finalize config
+        # Cập nhật config
         make olddefconfig
 
     - name: Build U-Boot
