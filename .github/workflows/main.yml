@@ -1,29 +1,48 @@
-name: Android NDK Build
+name: Build U-Boot QEMU ARM64 (Splash mặc định)
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-uboot:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v3
 
-    - name: Set up Android NDK
-      uses: nttld/setup-ndk@v1
-      with:
-        ndk-version: r27c
-
-    - name: Build libexecutor.so
+    - name: Install build dependencies
       run: |
-        $ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang \
-          -fPIC -shared executor.cpp -o libexecutor.so
+        sudo apt update
+        sudo apt install -y gcc-aarch64-linux-gnu make bison flex libssl-dev
 
-    - name: Upload libexecutor.so
+    - name: Clone U-Boot
+      run: |
+        git clone https://source.denx.de/u-boot/u-boot.git
+        cd u-boot
+
+        # Set config for QEMU ARM64 board
+        make qemu_arm64_defconfig
+
+        # Enable splash screen (mặc định, không cần ảnh ngoài)
+        echo "CONFIG_VIDEO=y" >> .config
+        echo "CONFIG_DM_VIDEO=y" >> .config
+        echo "CONFIG_VIDEO_LOGO=y" >> .config
+        echo "CONFIG_SYS_WHITE_ON_BLACK=y" >> .config
+        echo "CONFIG_SPLASH_SCREEN=y" >> .config
+
+        make olddefconfig
+        make -j$(nproc) CROSS_COMPILE=aarch64-linux-gnu-
+
+    - name: Save build output
+      run: |
+        mkdir -p output
+        cp u-boot/u-boot.bin output/
+
+    - name: Upload bootloader artifact
       uses: actions/upload-artifact@v4
       with:
-        name: libexecutor
-        path: libexecutor.so
+        name: u-boot-splash-default
+        path: output/
